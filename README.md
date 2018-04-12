@@ -539,7 +539,7 @@ data: {
 ## 七、条件渲染
 ### 1、v-if
 
-- **在 <template> 元素上使用 v-if 条件渲染分组**
+- **在 template 元素上使用 v-if 条件渲染分组**
 ```
 <template v-if="ok">
   <h1>Title</h1>
@@ -602,6 +602,850 @@ v-if 也是惰性的：如果在初始渲染时条件为假，则什么也不做
 
 ### 2、v-if 与 v-for 一起使用
 当 v-if 与 v-for 一起使用时，v-for 具有比 v-if 更高的优先级。
+
+## 八、列表渲染
+### 1、用 v-for 把一个数组对应为一组元素
+```
+<ul id="example-2">
+  <li v-for="(item, index) in items">
+    {{ parentMessage }} - {{ index }} - {{ item.message }}
+  </li>
+</ul>
+
+var example2 = new Vue({
+  el: '#example-2',
+  data: {
+    parentMessage: 'Parent',
+    items: [
+      { message: 'Foo' },
+      { message: 'Bar' }
+    ]
+  }
+})
+```
+也可以用 of 替代 in 作为分隔符：
+```
+<div v-for="item of items"></div>
+```
+
+### 2、一个对象的 v-for
+```
+<ul id="v-for-object" class="demo">
+  <li v-for="(key, value, index) in object">
+    {{ index }}. {{ key }}: {{ value }}
+  </li>
+</ul>
+
+new Vue({
+  el: '#v-for-object',
+  data: {
+    object: {
+      firstName: 'John',
+      lastName: 'Doe',
+      age: 30
+    }
+  }
+})
+```
+
+### 3、key
+为了给 Vue 一个提示，以便它能跟踪每个节点的身份，从而重用和重新排序现有元素，你需要为每项提供一个唯一 key 属性。理想的 key 值是每项都有的且唯一的 id。
+
+建议尽可能在使用 v-for 时提供 key，除非遍历输出的 DOM 内容非常简单，或者是刻意依赖默认行为以获取性能上的提升。
+```
+<div v-for="item in items" :key="item.id">
+  <!-- 内容 -->
+</div>
+```
+
+### 4、数组更新检测
+- **变异方法**
+
+push()，pop()，shift()，unshift()，splice()，sort()，reverse()
+
+- **替换数组**
+
+filter(), concat() 和 slice()
+```
+example1.items = example1.items.filter(function (item) {
+  return item.message.match(/Foo/)
+})
+```
+
+- **注意事项**
+
+由于 JavaScript 的限制，Vue 不能检测以下变动的数组：
+1. 当你利用索引直接设置一个项时，例如：vm.items[indexOfItem] = newValue
+1. 当你修改数组的长度时，例如：vm.items.length = newLength
+
+```
+var vm = new Vue({
+  data: {
+    items: ['a', 'b', 'c']
+  }
+})
+vm.items[1] = 'x' // 不是响应性的
+vm.items.length = 2 // 不是响应性的
+
+// 下面这3种方式都可以
+Vue.set(vm.items, indexOfItem, newValue)
+vm.items.splice(indexOfItem, 1, newValue)
+vm.$set(vm.items, indexOfItem, newValue)
+
+//为了解决第二类问题，你可以使用 splice：
+vm.items.splice(newLength)
+```
+
+## 5、对象更改检测注意事项
+Vue 不能检测对象属性的添加或删除：
+```
+var vm = new Vue({
+  data: {
+    userProfile: {
+      name: 'Anika'
+    }
+  }
+})
+// `vm.userProfile.name` 现在是响应式的
+
+vm.userProfile.age = 27
+// `vm.userProfile.age` 不是响应式的
+
+// 下面这2种添加方式都可以
+Vue.set(vm.userProfile, 'age', 27)
+vm.$set(vm.userProfile, 'age', 27)
+```
+
+有时你可能需要为已有对象赋予多个新属性，比如使用 Object.assign() 或 _.extend()。
+```
+//不要像这样：
+Object.assign(vm.userProfile, {
+  age: 27,
+  favoriteColor: 'Vue Green'
+})
+
+//你应该这样做：
+vm.userProfile = Object.assign({}, vm.userProfile, {
+  age: 27,
+  favoriteColor: 'Vue Green'
+})
+```
+
+### 6、显示过滤/排序结果
+```
+<li v-for="n in evenNumbers">{{ n }}</li>
+
+data: {
+  numbers: [ 1, 2, 3, 4, 5 ]
+},
+computed: {
+  evenNumbers: function () {
+    return this.numbers.filter(function (number) {
+      return number % 2 === 0
+    })
+  }
+}
+```
+在计算属性不适用的情况下 (例如，在嵌套 v-for 循环中) 你可以使用一个 method 方法：
+```
+<li v-for="n in even(numbers)">{{ n }}</li>
+
+data: {
+  numbers: [ 1, 2, 3, 4, 5 ]
+},
+methods: {
+  even: function (numbers) {
+    return numbers.filter(function (number) {
+      return number % 2 === 0
+    })
+  }
+}
+```
+
+### 7、一段取值范围的 v-for
+```
+<div>
+  <span v-for="n in 10">{{ n }} </span>
+</div>
+```
+结果： 1 2 3 4 5 6 7 8 9 10
+
+### 8、v-for on a template
+```
+<ul>
+  <template v-for="item in items">
+    <li>{{ item.msg }}</li>
+    <li class="divider"></li>
+  </template>
+</ul>
+```
+
+### 9、v-for with v-if
+当它们处于同一节点，v-for 的优先级比 v-if 更高:
+```
+<li v-for="todo in todos" v-if="!todo.isComplete">
+  {{ todo }}
+</li>
+```
+如果你的目的是有条件地跳过循环的执行，那么可以将 v-if 置于外层元素 (或 template)上：
+```
+<ul v-if="todos.length">
+  <li v-for="todo in todos">
+    {{ todo }}
+  </li>
+</ul>
+<p v-else>No todos left!</p>
+```
+
+### 10、一个组件的 v-for
+ todo list 的完整例子：
+ ```
+ <div id="todo-list-example">
+  <input
+    v-model="newTodoText"
+    v-on:keyup.enter="addNewTodo"
+    placeholder="Add a todo"
+  >
+  <ul>
+    <todo-item
+      v-for="(todo, index) in todos"
+      v-bind:key="todo.id"
+      v-bind:title="todo.title"
+      v-on:remove="todos.splice(index, 1)"
+    ></todo-item>
+  </ul>
+</div>
+
+Vue.component('todo-item', {
+  template: '\
+    <li>\
+      {{ title }}\
+      <button v-on:click="$emit(\'remove\')">X</button>\
+    </li>\
+  ',
+  props: ['title']
+})
+
+new Vue({
+  el: '#todo-list-example',
+  data: {
+    newTodoText: '',
+    todos: [
+      {
+        id: 1,
+        title: 'Do the dishes',
+      },
+      {
+        id: 2,
+        title: 'Take out the trash',
+      },
+      {
+        id: 3,
+        title: 'Mow the lawn'
+      }
+    ],
+    nextTodoId: 4
+  },
+  methods: {
+    addNewTodo: function () {
+      this.todos.push({
+        id: this.nextTodoId++,
+        title: this.newTodoText
+      })
+      this.newTodoText = ''
+    }
+  }
+})
+ ```
+
+## 九、事件处理
+### 1、监听事件
+可以用 v-on 指令监听 DOM 事件，并在触发时运行一些 JavaScript 代码。
+```
+<div id="example-1">
+  <button v-on:click="counter += 1">Add 1</button>
+  <p>The button above has been clicked {{ counter }} times.</p>
+</div>
+
+var example1 = new Vue({
+  el: '#example-1',
+  data: {
+    counter: 0
+  }
+})
+```
+
+### 2、事件处理方法
+然而许多事件处理逻辑会更为复杂，所以直接把 JavaScript 代码写在 v-on 指令中是不可行的。因此 v-on 还可以接收一个需要调用的方法名称。
+```
+<div id="example-2">
+  <!-- `greet` 是在下面定义的方法名 -->
+  <button v-on:click="greet">Greet</button>
+</div>
+
+var example2 = new Vue({
+  el: '#example-2',
+  data: {
+    name: 'Vue.js'
+  },
+  // 在 `methods` 对象中定义方法
+  methods: {
+    greet: function (event) {
+      // `this` 在方法里指向当前 Vue 实例
+      alert('Hello ' + this.name + '!')
+      // `event` 是原生 DOM 事件
+      if (event) {
+        alert(event.target.tagName)
+      }
+    }
+  }
+})
+
+// 也可以用 JavaScript 直接调用方法
+example2.greet() // => 'Hello Vue.js!'
+```
+
+### 3、内联处理器中的方法
+除了直接绑定到一个方法，也可以在内联 JavaScript 语句中调用方法：
+```
+<div id="example-3">
+  <button v-on:click="say('hi', $event)">Say hi</button>
+  <button v-on:click="say('what', $event)">Say what</button>
+</div>
+
+new Vue({
+  el: '#example-3',
+  methods: {
+    say: function (message, event) {
+      alert(message + event)
+    }
+  }
+})
+```
+
+### 4、事件修饰符
+- .stop
+- .prevent
+- .capture
+- .self
+- .once
+
+```
+<!-- 阻止单击事件继续传播 -->
+<a v-on:click.stop="doThis"></a>
+
+<!-- 提交事件不再重载页面 -->
+<form v-on:submit.prevent="onSubmit"></form>
+
+<!-- 修饰符可以串联 -->
+<a v-on:click.stop.prevent="doThat"></a>
+
+<!-- 只有修饰符 -->
+<form v-on:submit.prevent></form>
+
+<!-- 添加事件监听器时使用事件捕获模式 -->
+<!-- 即元素自身触发的事件先在此处处理，然后才交由内部元素进行处理 -->
+<div v-on:click.capture="doThis">...</div>
+
+<!-- 只当在 event.target 是当前元素自身时触发处理函数 -->
+<!-- 即事件不是从内部元素触发的 -->
+<div v-on:click.self="doThat">...</div>
+
+<!-- 点击事件将只会触发一次 -->
+<a v-on:click.once="doThis"></a>
+
+<!-- 滚动事件的默认行为 (即滚动行为) 将会立即触发 -->
+<!-- 而不会等待 `onScroll` 完成  -->
+<!-- 这其中包含 `event.preventDefault()` 的情况 -->
+<div v-on:scroll.passive="onScroll">...</div>
+```
+使用修饰符时，**顺序很重要**；相应的代码会以同样的顺序产生。因此，用 v-on:click.prevent.self 会阻止**所有的点击**，而 v-on:click.self.prevent 只会阻止对元素自身的点击。
+
+不要把 .passive 和 .prevent 一起使用，因为 .prevent 将会被忽略，同时浏览器可能会向你展示一个警告。请记住，.passive 会告诉浏览器你**不想阻止事件的默认行为**。
+
+
+### 5、按键修饰符
+- .enter
+- .tab
+- .delete (捕获“删除”和“退格”键)
+- .esc
+- .space
+- .up
+- .down
+- .left
+- .right
+
+```
+<!-- 只有在 `keyCode` 是 13 时调用 `vm.submit()` -->
+<input v-on:keyup.13="submit">
+
+<!-- 同上 -->
+<input v-on:keyup.enter="submit">
+
+<!-- 缩写语法 -->
+<input @keyup.enter="submit">
+```
+
+可以通过全局 config.keyCodes 对象自定义按键修饰符别名：
+```
+// 可以使用 `v-on:keyup.f1`
+Vue.config.keyCodes.f1 = 112
+```
+
+- **系统修饰键**
+- .ctrl
+- .alt
+- .shift
+- .meta
+
+请注意修饰键与常规按键不同，在和 keyup 事件一起用时，事件触发时修饰键必须处于按下状态。换句话说，只有在按住 ctrl 的情况下释放其它按键，才能触发 keyup.ctrl。而单单释放 ctrl 也不会触发事件。如果你想要这样的行为，请为 ctrl 换用 keyCode：keyup.17。
+
+
+- **.exact 修饰符**
+.exact 修饰符允许你控制由精确的系统修饰符组合触发的事件。
+```
+<!-- 即使 Alt 或 Shift 被一同按下时也会触发 -->
+<button @click.ctrl="onClick">A</button>
+
+<!-- 有且只有 Ctrl 被按下的时候才触发 -->
+<button @click.ctrl.exact="onCtrlClick">A</button>
+
+<!-- 没有任何系统修饰符被按下的时候才触发 -->
+<button @click.exact="onClick">A</button>
+```
+
+- **鼠标按钮修饰符**
+- .left
+- .right
+- .middle
+
+## 十、表单输入绑定
+v-model 会忽略所有表单元素的 value、checked、selected 特性的初始值而总是将 Vue 实例的数据作为数据来源。你应该通过 JavaScript 在组件的 data 选项中声明初始值。
+
+对于需要使用输入法 (如中文、日文、韩文等) 的语言，你会发现 v-model 不会在输入法组合文字过程中得到更新。如果你也想处理这个过程，请使用 input 事件。
+ ## 1、修饰符
+  - **.lazy**
+  ```
+  <!-- 在“change”时而非“input”时更新 -->
+<input v-model.lazy="msg" >
+  ```
+  
+ - **.number**
+ ```
+ <input v-model.number="age" type="number">
+ ```
+这通常很有用，因为即使在 type="number" 时，HTML 输入元素的值也总会返回字符串。
+
+- **.trim**
+如果要自动过滤用户输入的首尾空白字符，可以给 v-model 添加 trim 修饰符：
+```
+<input v-model.trim="msg">
+```
+
+## 十一、组件
+### 1、使用组件
+- **全局注册**
+注意确保在初始化根实例之前注册组件：
+```
+<div id="example">
+  <my-component></my-component>
+</div>
+
+// 注册
+Vue.component('my-component', {
+  template: '<div>A custom component!</div>'
+})
+
+// 创建根实例
+new Vue({
+  el: '#example'
+})
+```
+
+- **局部注册**
+```
+var Child = {
+  template: '<div>A custom component!</div>'
+}
+
+new Vue({
+  // ...
+  components: {
+    // <my-component> 将只在父组件模板中可用
+    'my-component': Child
+  }
+})
+```
+
+- **data 必须是函数**
+```
+Vue.component('simple-counter', {
+  template: '<button v-on:click="counter += 1">{{ counter }}</button>',
+  data: function () {
+    return {
+      counter: 0
+    }
+  }
+})
+
+new Vue({
+  el: '#example-2'
+})
+```
+
+- **组件组合**
+父组件通过 **prop** 给子组件下发数据，子组件通过**事件**给父组件发送消息。看看它们是怎么工作的。
+
+### 2、Prop
+- **用 Prop 传递数据**
+```
+Vue.component('child', {
+  // 声明 props
+  props: ['message'],
+  // 就像 data 一样，prop 也可以在模板中使用
+  // 同样也可以在 vm 实例中通过 this.message 来使用
+  template: '<span>{{ message }}</span>'
+})
+
+<child message="hello!"></child>
+```
+
+- **动态 Prop**
+使用v-bind：
+```
+<div id="prop-example-2">
+  <input v-model="parentMsg">
+  <br>
+  <child v-bind:my-message="parentMsg"></child>
+</div>
+
+new Vue({
+  el: '#prop-example-2',
+  data: {
+    parentMsg: 'Message from parent'
+  }
+})
+```
+
+- **字面量语法 vs 动态语法**
+使用v-bind：
+```
+<!-- 传递了一个字符串 "1" -->
+<comp some-prop="1"></comp>
+
+<!-- 传递真正的数值 -->
+<comp v-bind:some-prop="1"></comp>
+```
+
+- **单向数据流**
+在 JavaScript 中对象和数组是引用类型，指向同一个内存空间，如果 prop 是一个对象或数组，在子组件内部改变它会影响父组件的状态。
+
+- **Prop 验证**
+要指定验证规则，需要用对象的形式来定义 prop，而不能用字符串数组：
+
+```
+Vue.component('example', {
+  props: {
+    // 基础类型检测 (`null` 指允许任何类型)
+    propA: Number,
+    // 可能是多种类型
+    propB: [String, Number],
+    // 必传且是字符串
+    propC: {
+      type: String,
+      required: true
+    },
+    // 数值且有默认值
+    propD: {
+      type: Number,
+      default: 100
+    },
+    // 数组/对象的默认值应当由一个工厂函数返回
+    propE: {
+      type: Object,
+      default: function () {
+        return { message: 'hello' }
+      }
+    },
+    // 自定义验证函数
+    propF: {
+      validator: function (value) {
+        return value > 10
+      }
+    }
+  }
+})
+```
+
+type 可以是下面原生构造器：
+
+- String
+- Number
+- Boolean
+- Function
+- Object
+- Array
+- Symbol
+
+type 也可以是一个自定义构造器函数，使用 instanceof 检测。
+
+
+### 3、非 Prop 特性
+所谓非 prop 特性，就是指它可以直接传入组件，而不需要定义相应的 prop。
+```
+<bs-date-input data-3d-date-picker="true"></bs-date-input>
+```
+
+### 4、自定义事件
+子组件跟父组件通信。
+
+- **使用 v-on 绑定自定义事件**
+每个 Vue 实例都实现了事件接口，即：
+1. 使用 $on(eventName) 监听事件
+1. 使用 $emit(eventName, optionalPayload) 触发事件
+
+父组件可以在使用子组件的地方直接用 v-on 来监听子组件触发的事件。但不能用 $on 监听子组件释放的事件，必须在模板里直接用 v-on 绑定。
+```
+<div id="counter-event-example">
+  <p>{{ total }}</p>
+  <button-counter v-on:increment="incrementTotal"></button-counter>
+  <button-counter v-on:increment="incrementTotal"></button-counter>
+</div>
+
+Vue.component('button-counter', {
+  template: '<button v-on:click="incrementCounter">{{ counter }}</button>',
+  data: function () {
+    return {
+      counter: 0
+    }
+  },
+  methods: {
+    incrementCounter: function () {
+      this.counter += 1
+      this.$emit('increment')
+    }
+  },
+})
+
+new Vue({
+  el: '#counter-event-example',
+  data: {
+    total: 0
+  },
+  methods: {
+    incrementTotal: function () {
+      this.total += 1
+    }
+  }
+})
+```
+还可以通过载荷（payload）传给父组件额外的参数，最好是对象的形式。
+
+- **给组件绑定原生事件**
+```
+<my-component v-on:click.native="doTheThing"></my-component>
+```
+
+- **.sync 修饰符**
+它只是作为一个编译时的语法糖存在。它会被扩展为一个自动更新父组件属性的 v-on 监听器。
+```
+<comp :foo.sync="bar"></comp>
+
+当子组件需要更新 foo 的值时，它需要显式地触发一个更新事件：
+this.$emit('update:foo', newValue)
+
+当使用一个对象一次性设置多个属性的时候，这个 .sync 修饰符也可以和 v-bind 一起使用：
+<comp v-bind.sync="{ foo: 1, bar: 2 }"></comp>
+```
+
+- **使用自定义事件的表单输入组件**
+```
+<currency-input v-model="price"></currency-input>
+
+Vue.component('currency-input', {
+  template: '\
+    <span>\
+      $\
+      <input\
+        ref="input"\
+        v-bind:value="value"\
+        v-on:input="updateValue($event.target.value)"\
+      >\
+    </span>\
+  ',
+  props: ['value'],
+  methods: {
+    // 不是直接更新值，而是使用此方法来对输入值进行格式化和位数限制
+    updateValue: function (value) {
+      var formattedValue = value
+        // 删除两侧的空格符
+        .trim()
+        // 保留 2 位小数
+        .slice(
+          0,
+          value.indexOf('.') === -1
+            ? value.length
+            : value.indexOf('.') + 3
+        )
+      // 如果值尚不合规，则手动覆盖为合规的值
+      if (formattedValue !== value) {
+        this.$refs.input.value = formattedValue
+      }
+      // 通过 input 事件带出数值
+      this.$emit('input', Number(formattedValue))
+    }
+  }
+})
+```
+
+- **自定义组件的 v-model**
+默认情况下，一个组件的 v-model 会使用 value prop 和 input 事件。但是诸如单选框、复选框之类的输入类型可能把 value 用作了别的目的。model 选项可以避免这样的冲突：
+```
+Vue.component('my-checkbox', {
+  model: {
+    prop: 'checked',
+    event: 'change'
+  },
+  props: {
+    checked: Boolean,
+    // 这样就允许拿 `value` 这个 prop 做其它事了
+    value: String
+  },
+  // ...
+})
+
+<my-checkbox v-model="foo" value="some value"></my-checkbox>
+```
+
+- **非父子组件的通信**
+```
+var bus = new Vue()
+
+// 触发组件 A 中的事件
+bus.$emit('id-selected', 1)
+
+// 在组件 B 创建的钩子中监听事件
+bus.$on('id-selected', function (id) {
+  // ...
+})
+```
+
+### 5、使用插槽分发内容
+- **编译作用域**
+父组件模板的内容在父组件作用域内编译；子组件模板的内容在子组件作用域内编译。
+
+- **具名插槽**
+```
+假定我们有一个 app-layout 组件，它的模板为：
+<div class="container">
+  <header>
+    <slot name="header"></slot>
+  </header>
+  <main>
+    <slot></slot>
+  </main>
+  <footer>
+    <slot name="footer"></slot>
+  </footer>
+</div>
+
+父组件模板：
+<app-layout>
+  <h1 slot="header">这里可能是一个页面标题</h1>
+
+  <p>主要内容的一个段落。</p>
+  <p>另一个主要段落。</p>
+
+  <p slot="footer">这里有一些联系信息</p>
+</app-layout>
+
+渲染结果为：
+<div class="container">
+  <header>
+    <h1>这里可能是一个页面标题</h1>
+  </header>
+  <main>
+    <p>主要内容的一个段落。</p>
+    <p>另一个主要段落。</p>
+  </main>
+  <footer>
+    <p>这里有一些联系信息</p>
+  </footer>
+</div>
+```
+
+- **作用域插槽**
+作用域插槽是一种特殊类型的插槽，用作一个 (能被传递数据的) 可重用模板，来代替已经渲染好的元素。
+```
+<div class="child">
+  <slot text="hello from child"></slot>
+</div>
+
+<div class="parent">
+  <child>
+    <template slot-scope="props">
+      <span>hello from parent</span>
+      <span>{{ props.text }}</span>
+    </template>
+  </child>
+</div>
+
+如果我们渲染上述模板，得到的输出会是：
+<div class="parent">
+  <div class="child">
+    <span>hello from parent</span>
+    <span>hello from child</span>
+  </div>
+</div>
+```
+
+### 6、动态组件
+通过使用保留的 component 元素，并对其 is 特性进行动态绑定，你可以在同一个挂载点动态切换多个组件：
+```
+var vm = new Vue({
+  el: '#example',
+  data: {
+    currentView: 'home'
+  },
+  components: {
+    home: { /* ... */ },
+    posts: { /* ... */ },
+    archive: { /* ... */ }
+  }
+})
+  
+<component v-bind:is="currentView">
+  <!-- 组件在 vm.currentview 变化时改变！ -->
+</component>
+```
+
+- **keep-alive**
+如果把切换出去的组件保留在内存中，可以保留它的状态或避免重新渲染。为此可以添加一个 keep-alive 指令参数：
+```
+<keep-alive>
+  <component :is="currentView">
+    <!-- 非活动组件将被缓存！ -->
+  </component>
+</keep-alive>
+```
+
+###  7、杂项
+- **编写可复用组件**
+
+Vue 组件的 API 来自三部分——prop、事件和插槽：
+1. **Prop** 允许外部环境传递数据给组件；
+1. **事件** 允许从组件内触发外部环境的副作用；
+1. **插槽** 允许外部环境将额外的内容组合在组件中。
+
+
+
+
+
+
+
+
+
+
 
 
 
