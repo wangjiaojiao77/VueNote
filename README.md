@@ -528,6 +528,7 @@ data: {
 ```
 
 - **自动添加前缀**
+
 当 v-bind:style 使用需要添加浏览器引擎前缀的 CSS 属性时，如 transform，Vue.js 会自动侦测并添加相应的前缀。
 
 - **多重值**
@@ -573,6 +574,7 @@ data: {
 ```
 
 - **用 key 管理可复用的元素**
+
 Vue 为你提供了一种方式来表达“这两个元素是完全独立的，不要复用它们”。只需添加一个具有唯一值的 key 属性即可：
 ```
 <template v-if="loginType === 'username'">
@@ -995,6 +997,7 @@ Vue.config.keyCodes.f1 = 112
 ```
 
 - **系统修饰键**
+
 - .ctrl
 - .alt
 - .shift
@@ -1004,6 +1007,7 @@ Vue.config.keyCodes.f1 = 112
 
 
 - **.exact 修饰符**
+
 .exact 修饰符允许你控制由精确的系统修饰符组合触发的事件。
 ```
 <!-- 即使 Alt 或 Shift 被一同按下时也会触发 -->
@@ -1017,6 +1021,7 @@ Vue.config.keyCodes.f1 = 112
 ```
 
 - **鼠标按钮修饰符**
+
 - .left
 - .right
 - .middle
@@ -1039,6 +1044,7 @@ v-model 会忽略所有表单元素的 value、checked、selected 特性的初�
 这通常很有用，因为即使在 type="number" 时，HTML 输入元素的值也总会返回字符串。
 
 - **.trim**
+
 如果要自动过滤用户输入的首尾空白字符，可以给 v-model 添加 trim 修饰符：
 ```
 <input v-model.trim="msg">
@@ -1047,6 +1053,7 @@ v-model 会忽略所有表单元素的 value、checked、selected 特性的初�
 ## 十一、组件
 ### 1、使用组件
 - **全局注册**
+
 注意确保在初始化根实例之前注册组件：
 ```
 <div id="example">
@@ -1096,6 +1103,7 @@ new Vue({
 ```
 
 - **组件组合**
+
 父组件通过 **prop** 给子组件下发数据，子组件通过**事件**给父组件发送消息。看看它们是怎么工作的。
 
 ### 2、Prop
@@ -1113,6 +1121,7 @@ Vue.component('child', {
 ```
 
 - **动态 Prop**
+
 使用v-bind：
 ```
 <div id="prop-example-2">
@@ -1130,6 +1139,7 @@ new Vue({
 ```
 
 - **字面量语法 vs 动态语法**
+
 使用v-bind：
 ```
 <!-- 传递了一个字符串 "1" -->
@@ -1140,9 +1150,11 @@ new Vue({
 ```
 
 - **单向数据流**
+
 在 JavaScript 中对象和数组是引用类型，指向同一个内存空间，如果 prop 是一个对象或数组，在子组件内部改变它会影响父组件的状态。
 
 - **Prop 验证**
+
 要指定验证规则，需要用对象的形式来定义 prop，而不能用字符串数组：
 
 ```
@@ -1202,6 +1214,7 @@ type 也可以是一个自定义构造器函数，使用 instanceof 检测。
 子组件跟父组件通信。
 
 - **使用 v-on 绑定自定义事件**
+
 每个 Vue 实例都实现了事件接口，即：
 1. 使用 $on(eventName) 监听事件
 1. 使用 $emit(eventName, optionalPayload) 触发事件
@@ -1249,6 +1262,7 @@ new Vue({
 ```
 
 - **.sync 修饰符**
+
 它只是作为一个编译时的语法糖存在。它会被扩展为一个自动更新父组件属性的 v-on 监听器。
 ```
 <comp :foo.sync="bar"></comp>
@@ -1301,6 +1315,7 @@ Vue.component('currency-input', {
 ```
 
 - **自定义组件的 v-model**
+
 默认情况下，一个组件的 v-model 会使用 value prop 和 input 事件。但是诸如单选框、复选框之类的输入类型可能把 value 用作了别的目的。model 选项可以避免这样的冲突：
 ```
 Vue.component('my-checkbox', {
@@ -1334,6 +1349,7 @@ bus.$on('id-selected', function (id) {
 
 ### 5、使用插槽分发内容
 - **编译作用域**
+
 父组件模板的内容在父组件作用域内编译；子组件模板的内容在子组件作用域内编译。
 
 - **具名插槽**
@@ -1377,6 +1393,7 @@ bus.$on('id-selected', function (id) {
 ```
 
 - **作用域插槽**
+
 作用域插槽是一种特殊类型的插槽，用作一个 (能被传递数据的) 可重用模板，来代替已经渲染好的元素。
 ```
 <div class="child">
@@ -1422,6 +1439,7 @@ var vm = new Vue({
 ```
 
 - **keep-alive**
+
 如果把切换出去的组件保留在内存中，可以保留它的状态或避免重新渲染。为此可以添加一个 keep-alive 指令参数：
 ```
 <keep-alive>
@@ -1440,13 +1458,175 @@ Vue 组件的 API 来自三部分——prop、事件和插槽：
 1. **插槽** 允许外部环境将额外的内容组合在组件中。
 
 
+## 十二、进入/离开 & 列表过渡
+### 1、单元素/组件的过渡
+```
+<div id="demo">
+  <button v-on:click="show = !show">
+    Toggle
+  </button>
+  <transition name="fade">
+    <p v-if="show">hello</p>
+  </transition>
+</div>
 
+new Vue({
+  el: '#demo',
+  data: {
+    show: true
+  }
+})
 
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .5s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
+}
+```
 
+- **过渡的类名**
 
+v-enter、v-enter-active、v-enter-to、v-leave、v-leave-active、v-leave-to
 
+![image](https://cn.vuejs.org/images/transition.png)
 
+- **自定义过渡的类名**
 
+我们可以通过以下特性来自定义过渡类名：
+1. enter-class
+1. enter-active-class
+1. enter-to-class (2.1.8+)
+1. leave-class
+1. leave-active-class
+1. leave-to-class (2.1.8+)
+
+```
+<link href="https://cdn.jsdelivr.net/npm/animate.css@3.5.1" rel="stylesheet" type="text/css">
+
+<div id="example-3">
+  <button @click="show = !show">
+    Toggle render
+  </button>
+  <transition
+    name="custom-classes-transition"
+    enter-active-class="animated tada"
+    leave-active-class="animated bounceOutRight"
+  >
+    <p v-if="show">hello</p>
+  </transition>
+</div>
+
+new Vue({
+  el: '#example-3',
+  data: {
+    show: true
+  }
+})
+```
+
+- **显性的过渡持续时间**
+```
+<transition :duration="1000">...</transition>
+
+你也可以定制进入和移出的持续时间：
+<transition :duration="{ enter: 500, leave: 800 }">...</transition>
+```
+
+- **JavaScript 钩子**
+```
+<transition
+  v-on:before-enter="beforeEnter"
+  v-on:enter="enter"
+  v-on:after-enter="afterEnter"
+  v-on:enter-cancelled="enterCancelled"
+
+  v-on:before-leave="beforeLeave"
+  v-on:leave="leave"
+  v-on:after-leave="afterLeave"
+  v-on:leave-cancelled="leaveCancelled"
+>
+  <!-- ... -->
+</transition>
+
+// ...
+methods: {
+  // --------
+  // 进入中
+  // --------
+
+  beforeEnter: function (el) {
+    // ...
+  },
+  // 此回调函数是可选项的设置
+  // 与 CSS 结合时使用
+  enter: function (el, done) {
+    // ...
+    done()
+  },
+  afterEnter: function (el) {
+    // ...
+  },
+  enterCancelled: function (el) {
+    // ...
+  },
+
+  // --------
+  // 离开时
+  // --------
+
+  beforeLeave: function (el) {
+    // ...
+  },
+  // 此回调函数是可选项的设置
+  // 与 CSS 结合时使用
+  leave: function (el, done) {
+    // ...
+    done()
+  },
+  afterLeave: function (el) {
+    // ...
+  },
+  // leaveCancelled 只用于 v-show 中
+  leaveCancelled: function (el) {
+    // ...
+  }
+}
+```
+推荐对于仅使用 JavaScript 过渡的元素添加 v-bind:css="false"，Vue 会跳过 CSS 的检测。这也可以避免过渡过程中 CSS 的影响。
+
+### 2、初始渲染的过渡
+可以通过 appear 特性设置节点在初始渲染的过渡
+```
+<transition appear>
+  <!-- ... -->
+</transition>
+```
+
+这里默认和进入/离开过渡一样，同样也可以自定义 CSS 类名。
+```
+<transition
+  appear
+  appear-class="custom-appear-class"
+  appear-to-class="custom-appear-to-class" (2.1.8+)
+  appear-active-class="custom-appear-active-class"
+>
+  <!-- ... -->
+</transition>
+```
+
+自定义 JavaScript 钩子：
+```
+<transition
+  appear
+  v-on:before-appear="customBeforeAppearHook"
+  v-on:appear="customAppearHook"
+  v-on:after-appear="customAfterAppearHook"
+  v-on:appear-cancelled="customAppearCancelledHook"
+>
+  <!-- ... -->
+</transition>
+```
 
 
 
